@@ -229,6 +229,26 @@ https://github.com/Wintellect/WintellectPowerShell
             }
         }
 
+        function DeleteNode(         $document=$null,
+                                      $topElement=$null,
+                             [string] $elementName="")
+        {
+            Write-Debug -Message "Deleting $elementName"
+
+            $origNode = $topElement[$elementName]
+            if ($null -eq $origNode)
+            {
+                $node = $document.CreateElement($elementName,$script:BuildNamespace)
+                $node.InnerText = $elementValue
+
+                [void]$topElement.AppendChild($node)
+            }
+            else
+            {
+                $topElement.RemoveChild($origNode)
+            }
+        }
+
         function ReplaceRelativePathNode([string] $fileLocation="",
                                                   $document=$null,
                                                   $topElement=$null,
@@ -322,6 +342,7 @@ https://github.com/Wintellect/WintellectPowerShell
 
             foreach($item in $newProps.GetEnumerator())
             {
+                Write-Debug ("processing " + $item.Key + "=" + $item.Value)
                 # Have to treat the CodeAnalysisRuleSet property special so we get the 
                 # relative path set.
                 if ($item.Key -eq "CodeAnalysisRuleSet")
@@ -367,10 +388,20 @@ https://github.com/Wintellect/WintellectPowerShell
                 }
                 else
                 {
-                    ReplaceNode -document $allFileXML `
-                                -topElement $configGroup `
-                                -elementName $item.Key `
-                                -elementValue $item.Value
+                    # support deleting nodes
+                    if ($item.Value -eq "")
+                    {
+                        DeleteNode -document $allFileXML `
+                                   -topElement $configGroup `
+                                   -elementName $item.Key
+                    }
+                    else
+                    {
+                        ReplaceNode -document $allFileXML `
+                                    -topElement $configGroup `
+                                    -elementName $item.Key `
+                                    -elementValue $item.Value
+                    }
                 }
             }
         }
